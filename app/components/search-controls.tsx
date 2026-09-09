@@ -17,7 +17,7 @@ export const SearchControls = memo(function SearchControls({
 }: SearchControlsProps) {
   return (
     <div className="mb-8 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-      <div className="relative w-full md:max-w-[440px] md:flex-grow">
+      <div className="relative w-full md:max-w-110 md:grow">
         <Search
           size={18}
           aria-hidden

@@ -27,7 +27,7 @@ function Field({ id, label, ...inputProps }: FieldProps) {
     <div className="flex flex-col gap-2">
       <label
         htmlFor={id}
-        className="text-xs font-semibold uppercase tracking-[0.05em] text-muted"
+        className="text-xs font-semibold uppercase tracking-wider text-muted"
       >
         {label}
       </label>
@@ -57,7 +57,7 @@ export const NewJobCard = memo(function NewJobCard({
     const data = new FormData(form);
 
     onCreateJob({
-      id: Date.now(),
+      id: String(Date.now()),
       title: String(data.get("position") ?? "").trim() || "New Position",
       company: String(data.get("company") ?? "").trim() || "Unknown Company",
       stage: "Applied",
@@ -71,7 +71,7 @@ export const NewJobCard = memo(function NewJobCard({
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border-2 border-dashed border-line transition-all duration-[250ms] hover:border-accent hover:bg-accent-soft">
+    <div className="overflow-hidden rounded-2xl border-2 border-dashed border-line transition-all duration-250 hover:border-accent hover:bg-accent-soft">
       <div
         role="button"
         tabIndex={0}
@@ -80,7 +80,7 @@ export const NewJobCard = memo(function NewJobCard({
         onKeyDown={handleKeyDown}
         className="grid cursor-pointer grid-cols-[auto_1fr] items-center gap-4 px-7 py-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
-        <div className="flex size-[52px] shrink-0 items-center justify-center rounded-[14px] border border-line bg-surface text-muted shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
+        <div className="flex size-13 shrink-0 items-center justify-center rounded-[14px] border border-line bg-surface text-muted shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
           <Plus size={24} aria-hidden />
         </div>
         <div>
@@ -127,7 +127,7 @@ export const NewJobCard = memo(function NewJobCard({
             />
             <button
               type="submit"
-              className="flex h-[42px] items-center justify-center rounded-[10px] bg-accent px-6 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-px hover:brightness-110 hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] active:translate-y-0"
+              className="flex h-10.5 items-center justify-center rounded-[10px] bg-accent px-6 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-px hover:brightness-110 hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] active:translate-y-0"
             >
               Create Job
             </button>

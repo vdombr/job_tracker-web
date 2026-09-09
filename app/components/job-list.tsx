@@ -37,7 +37,7 @@ export function JobList({ jobs, onCreateJob }: JobListProps) {
           <JobCard
             key={job.id}
             job={job}
-            expanded={expandedId === String(job.id)}
+            expanded={expandedId === job.id}
             onToggle={handleToggle}
           />
         ))

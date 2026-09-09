@@ -5,7 +5,7 @@ export type Stage = (typeof STAGES)[number];
 export type StageFilter = "all" | Stage;
 
 export interface Job {
-  id: number;
+  id: string;
   title: string;
   company: string;
   stage: Stage;
@@ -30,7 +30,7 @@ export const STAGE_STYLES: Record<Stage, string> = {
 
 export const initialJobs: Job[] = [
   {
-    id: 1,
+    id: "1",
     title: "Senior Frontend Engineer",
     company: "Linear",
     stage: "Interviewing",
@@ -39,7 +39,7 @@ export const initialJobs: Job[] = [
     url: "https://linear.app",
   },
   {
-    id: 2,
+    id: "2",
     title: "Product Designer",
     company: "Vercel",
     stage: "Applied",
@@ -48,7 +48,7 @@ export const initialJobs: Job[] = [
     url: "https://vercel.com",
   },
   {
-    id: 3,
+    id: "3",
     title: "Software Engineer",
     company: "Notion",
     stage: "Offer",

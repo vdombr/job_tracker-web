@@ -15,7 +15,7 @@ export const JobCard = memo(function JobCard({
   expanded,
   onToggle,
 }: JobCardProps) {
-  const toggle = () => onToggle(String(job.id));
+  const toggle = () => onToggle(job.id);
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Enter" || event.key === " ") {
@@ -25,7 +25,7 @@ export const JobCard = memo(function JobCard({
   };
 
   return (
-    <article className="relative overflow-hidden rounded-2xl border border-line bg-surface transition-all duration-[250ms] hover:-translate-y-0.5 hover:border-muted hover:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.04)]">
+    <article className="relative overflow-hidden rounded-2xl border border-line bg-surface transition-all duration-250 hover:-translate-y-0.5 hover:border-muted hover:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.04)]">
       <div
         role="button"
         tabIndex={0}
@@ -34,7 +34,7 @@ export const JobCard = memo(function JobCard({
         onKeyDown={handleKeyDown}
         className="grid cursor-pointer grid-cols-[auto_1fr] items-center gap-4 px-7 py-5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent md:grid-cols-[auto_1fr_auto_auto] md:gap-7"
       >
-        <div className="flex size-[52px] shrink-0 items-center justify-center rounded-[14px] border border-line bg-surface text-muted shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
+        <div className="flex size-13 shrink-0 items-center justify-center rounded-[14px] border border-line bg-surface text-muted shadow-[0_2px_4px_rgba(0,0,0,0.02)]">
           <Building2 size={24} aria-hidden />
         </div>
         <div>
@@ -56,7 +56,7 @@ export const JobCard = memo(function JobCard({
       <Collapsible expanded={expanded}>
         <dl className="mt-3 grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-8 border-t border-line px-7 py-5">
           <div className="flex flex-col gap-1.5">
-            <dt className="text-xs font-semibold uppercase tracking-[0.05em] text-muted">
+            <dt className="text-xs font-semibold uppercase tracking-wider text-muted">
               HR Contact
             </dt>
             <dd className="break-all text-[0.9375rem] text-ink">
@@ -64,7 +64,7 @@ export const JobCard = memo(function JobCard({
             </dd>
           </div>
           <div className="flex flex-col gap-1.5">
-            <dt className="text-xs font-semibold uppercase tracking-[0.05em] text-muted">
+            <dt className="text-xs font-semibold uppercase tracking-wider text-muted">
               Application URL
             </dt>
             <dd className="break-all text-[0.9375rem]">
