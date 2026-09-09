@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo } from "react";
 import type { KeyboardEvent } from "react";
 import { Building2, Clock } from "lucide-react";
 import { STAGE_STYLES, type Job } from "@/app/lib/jobs";
@@ -6,12 +6,16 @@ import { Collapsible } from "./collapsible";
 
 interface JobCardProps {
   job: Job;
+  expanded: boolean;
+  onToggle: (id: string) => void;
 }
 
-export const JobCard = memo(function JobCard({ job }: JobCardProps) {
-  const [expanded, setExpanded] = useState(false);
-
-  const toggle = () => setExpanded((value) => !value);
+export const JobCard = memo(function JobCard({
+  job,
+  expanded,
+  onToggle,
+}: JobCardProps) {
+  const toggle = () => onToggle(String(job.id));
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Enter" || event.key === " ") {

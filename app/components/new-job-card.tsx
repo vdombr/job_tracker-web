@@ -1,11 +1,17 @@
-import { memo, useState } from "react";
+import { memo } from "react";
 import type { FormEvent, InputHTMLAttributes, KeyboardEvent } from "react";
 import { Plus } from "lucide-react";
 import { formatElapsed, type Job } from "@/app/lib/jobs";
 import { Collapsible } from "./collapsible";
 
+/** Identity of the new-job card in the list's single-expansion state. */
+export const NEW_JOB_ID = "new";
+
 interface NewJobCardProps {
   onCreateJob: (job: Job) => void;
+  expanded: boolean;
+  onToggle: (id: string) => void;
+  onCollapse: () => void;
 }
 
 const inputClasses =
@@ -30,10 +36,13 @@ function Field({ id, label, ...inputProps }: FieldProps) {
   );
 }
 
-export const NewJobCard = memo(function NewJobCard({ onCreateJob }: NewJobCardProps) {
-  const [expanded, setExpanded] = useState(false);
-
-  const toggle = () => setExpanded((value) => !value);
+export const NewJobCard = memo(function NewJobCard({
+  onCreateJob,
+  expanded,
+  onToggle,
+  onCollapse,
+}: NewJobCardProps) {
+  const toggle = () => onToggle(NEW_JOB_ID);
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Enter" || event.key === " ") {
@@ -58,7 +67,7 @@ export const NewJobCard = memo(function NewJobCard({ onCreateJob }: NewJobCardPr
     });
 
     form.reset();
-    setExpanded(false);
+    onCollapse();
   }
 
   return (
