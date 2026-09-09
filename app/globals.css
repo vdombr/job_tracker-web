@@ -1,26 +1,19 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Refined palette — muted & premium (mirrors the original design tokens) */
+@theme {
+  --color-canvas: oklch(98.5% 0.002 250);
+  --color-surface: oklch(100% 0 0);
+  --color-ink: oklch(18% 0.015 250);
+  --color-muted: oklch(55% 0.02 250);
+  --color-line: oklch(91% 0.01 250);
+
+  /* Premium indigo */
+  --color-accent: oklch(45% 0.14 270);
+  --color-accent-soft: oklch(96% 0.03 270);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }
