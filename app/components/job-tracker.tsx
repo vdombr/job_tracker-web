@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import type { Job, StageFilter } from "@/app/lib/jobs";
+import type { Job, Stage, StageFilter } from "@/app/lib/jobs";
 import { JobList } from "./job-list";
 import { SearchControls } from "./search-controls";
 import { StatsGrid } from "./stats-grid";
@@ -29,6 +29,12 @@ export function JobTracker({ initialJobs }: JobTrackerProps) {
     setJobs((current) => [job, ...current]);
   }, []);
 
+  const handleStageChange = useCallback((id: string, stage: Stage) => {
+    setJobs((current) =>
+      current.map((job) => (job.id === id ? { ...job, stage } : job))
+    );
+  }, []);
+
   return (
     <>
       <StatsGrid jobs={jobs} />
@@ -38,7 +44,11 @@ export function JobTracker({ initialJobs }: JobTrackerProps) {
         onQueryChange={setQuery}
         onFilterChange={setFilter}
       />
-      <JobList jobs={filteredJobs} onCreateJob={handleCreateJob} />
+      <JobList
+        jobs={filteredJobs}
+        onCreateJob={handleCreateJob}
+        onStageChange={handleStageChange}
+      />
     </>
   );
 }

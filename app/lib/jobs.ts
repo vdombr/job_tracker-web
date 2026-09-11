@@ -28,6 +28,14 @@ export const STAGE_STYLES: Record<Stage, string> = {
   Rejected: "bg-red-100 text-red-800",
 };
 
+/** Dot colors for the stage menu items (mirrors the original design tokens). */
+export const STAGE_DOTS: Record<Stage, string> = {
+  Applied: "bg-slate-500",
+  Interviewing: "bg-accent",
+  Offer: "bg-amber-800",
+  Rejected: "bg-red-800",
+};
+
 export const initialJobs: Job[] = [
   {
     id: "1",

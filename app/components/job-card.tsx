@@ -1,19 +1,28 @@
 import { memo } from "react";
 import type { KeyboardEvent } from "react";
 import { Building2, Clock } from "lucide-react";
-import { STAGE_STYLES, type Job } from "@/app/lib/jobs";
+import type { Job, Stage } from "@/app/lib/jobs";
 import { Collapsible } from "./collapsible";
+import { StageBadge } from "./stage-badge";
 
 interface JobCardProps {
   job: Job;
   expanded: boolean;
+  stageMenuOpen: boolean;
   onToggle: (id: string) => void;
+  onStageMenuToggle: (id: string) => void;
+  onStageMenuClose: () => void;
+  onStageChange: (id: string, stage: Stage) => void;
 }
 
 export const JobCard = memo(function JobCard({
   job,
   expanded,
+  stageMenuOpen,
   onToggle,
+  onStageMenuToggle,
+  onStageMenuClose,
+  onStageChange,
 }: JobCardProps) {
   const toggle = () => onToggle(job.id);
 
@@ -43,11 +52,15 @@ export const JobCard = memo(function JobCard({
           </h3>
           <p className="text-[0.9375rem] text-muted">{job.company}</p>
         </div>
-        <span
-          className={`justify-self-start rounded-full px-4 py-[0.4rem] text-xs font-semibold tracking-[0.02em] md:justify-self-auto ${STAGE_STYLES[job.stage]}`}
-        >
-          {job.stage}
-        </span>
+        <StageBadge
+          stage={job.stage}
+          open={stageMenuOpen}
+          onToggle={() => onStageMenuToggle(job.id)}
+          onSelect={(stage) => {
+            onStageChange(job.id, stage);
+            onStageMenuClose();
+          }}
+        />
         <span className="flex items-center gap-2 justify-self-start text-sm text-muted md:justify-self-auto">
           <Clock size={14} aria-hidden />
           {job.elapsed}

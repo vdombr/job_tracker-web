@@ -1,16 +1,19 @@
 import { useCallback, useState } from "react";
-import type { Job } from "@/app/lib/jobs";
+import type { Job, Stage } from "@/app/lib/jobs";
 import { JobCard } from "./job-card";
 import { NEW_JOB_ID, NewJobCard } from "./new-job-card";
 
 interface JobListProps {
   jobs: Job[];
   onCreateJob: (job: Job) => void;
+  onStageChange: (id: string, stage: Stage) => void;
 }
 
-export function JobList({ jobs, onCreateJob }: JobListProps) {
+export function JobList({ jobs, onCreateJob, onStageChange }: JobListProps) {
   // Only one card can be expanded at a time — opening one closes the others.
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  // Only one stage menu can be open at a time — opening one closes the others.
+  const [stageMenuId, setStageMenuId] = useState<string | null>(null);
 
   const handleToggle = useCallback((id: string) => {
     setExpandedId((current) => (current === id ? null : id));
@@ -18,6 +21,14 @@ export function JobList({ jobs, onCreateJob }: JobListProps) {
 
   const handleCollapse = useCallback(() => {
     setExpandedId(null);
+  }, []);
+
+  const handleStageMenuToggle = useCallback((id: string) => {
+    setStageMenuId((current) => (current === id ? null : id));
+  }, []);
+
+  const handleStageMenuClose = useCallback(() => {
+    setStageMenuId(null);
   }, []);
 
   return (
@@ -38,7 +49,11 @@ export function JobList({ jobs, onCreateJob }: JobListProps) {
             key={job.id}
             job={job}
             expanded={expandedId === job.id}
+            stageMenuOpen={stageMenuId === job.id}
             onToggle={handleToggle}
+            onStageMenuToggle={handleStageMenuToggle}
+            onStageMenuClose={handleStageMenuClose}
+            onStageChange={onStageChange}
           />
         ))
       )}
