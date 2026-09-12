@@ -120,7 +120,7 @@ export function StageBadge({ stage, open, onToggle, onSelect }: StageBadgeProps)
         aria-haspopup="listbox"
         aria-expanded={open}
         title="Click to change stage"
-        className={`cursor-pointer select-none rounded-full border border-transparent px-4 py-[0.4rem] text-xs font-semibold tracking-[0.02em] transition-all duration-200 hover:brightness-95 hover:shadow-[0_0_0_2px_var(--color-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent justify-self-start md:justify-self-auto ${STAGE_STYLES[stage]}`}
+        className={`cursor-pointer select-none rounded-full border border-transparent px-4 py-[0.4rem] text-xs font-semibold leading-[normal] tracking-[0.02em] transition-all duration-200 hover:brightness-95 hover:shadow-[0_0_0_2px_var(--color-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent justify-self-start md:justify-self-auto ${STAGE_STYLES[stage]}`}
       >
         {stage}
       </button>
@@ -134,7 +134,7 @@ export function StageBadge({ stage, open, onToggle, onSelect }: StageBadgeProps)
             aria-label="Change stage"
             onKeyDown={handleMenuKeyDown}
             style={{ position: "fixed", top: anchor.top, right: anchor.right }}
-            className="stage-menu z-50 min-w-36 rounded-xl border border-line bg-surface p-1.5 shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.1)]"
+            className="stage-menu z-50 min-w-35 rounded-xl border border-line bg-surface p-[0.35rem] shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.1)]"
           >
             {STAGES.map((option) => (
               <button
@@ -146,9 +146,7 @@ export function StageBadge({ stage, open, onToggle, onSelect }: StageBadgeProps)
                   event.stopPropagation();
                   onSelect(option);
                 }}
-                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-[0.8125rem] font-medium transition-all duration-200 hover:bg-accent-soft hover:text-accent focus:bg-accent-soft focus:text-accent focus:outline-none ${
-                  option === stage ? "text-accent" : "text-ink"
-                }`}
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-[0.8125rem] font-medium text-ink transition-all duration-200 hover:bg-accent-soft hover:text-accent focus:outline-none focus-visible:bg-accent-soft focus-visible:text-accent"
               >
                 <span aria-hidden className={`size-2 shrink-0 rounded-full ${STAGE_DOTS[option]}`} />
                 {option}
