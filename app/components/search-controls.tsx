@@ -39,7 +39,7 @@ export const SearchControls = memo(function SearchControls({
             type="button"
             onClick={() => onFilterChange(value)}
             aria-pressed={filter === value}
-            className={`rounded-full border px-5 py-2.5 text-sm font-medium transition-all duration-200 ${
+            className={`cursor-pointer rounded-full border px-5 py-2.5 text-sm font-medium transition-all duration-200 ${
               filter === value
                 ? "border-accent bg-accent text-white"
                 : "border-line bg-surface text-muted hover:border-muted hover:text-ink"
