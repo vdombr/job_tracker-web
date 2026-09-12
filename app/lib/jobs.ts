@@ -28,12 +28,14 @@ export const STAGE_STYLES: Record<Stage, string> = {
   Rejected: "bg-red-100 text-red-800",
 };
 
-/** Dot colors for the stage menu items (mirrors the original design tokens). */
+/** Dot colors for the stage menu items.
+ * Kept light and saturated so they stay distinct at 8px — the dark variants
+ * (amber-800/red-800) blur together, and slate-500 crowds the indigo accent. */
 export const STAGE_DOTS: Record<Stage, string> = {
-  Applied: "bg-slate-500",
+  Applied: "bg-slate-400",
   Interviewing: "bg-accent",
-  Offer: "bg-amber-800",
-  Rejected: "bg-red-800",
+  Offer: "bg-amber-500",
+  Rejected: "bg-red-500",
 };
 
 export const initialJobs: Job[] = [
