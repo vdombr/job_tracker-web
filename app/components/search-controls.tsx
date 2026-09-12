@@ -16,8 +16,8 @@ export const SearchControls = memo(function SearchControls({
   onFilterChange,
 }: SearchControlsProps) {
   return (
-    <div className="mb-8 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-      <div className="relative w-full md:max-w-110 md:grow">
+    <div className="mb-8 flex items-center justify-between gap-4">
+      <div className="relative w-full max-w-64 shrink">
         <Search
           size={18}
           aria-hidden
@@ -32,7 +32,7 @@ export const SearchControls = memo(function SearchControls({
           className="w-full rounded-xl border border-line bg-surface py-3 pl-11 pr-4 text-[0.9375rem] text-ink outline-none transition-all duration-200 focus:border-accent focus:ring-4 focus:ring-accent-soft"
         />
       </div>
-      <div role="group" aria-label="Filter jobs by stage" className="flex flex-wrap gap-2">
+      <div role="group" aria-label="Filter jobs by stage" className="flex shrink-0 gap-2">
         {STAGE_FILTERS.map(({ value, label }) => (
           <button
             key={value}

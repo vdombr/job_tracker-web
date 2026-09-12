@@ -19,6 +19,7 @@ export const STAGE_FILTERS: readonly { value: StageFilter; label: string }[] = [
   { value: "Applied", label: "Applied" },
   { value: "Interviewing", label: "Interviewing" },
   { value: "Offer", label: "Offer" },
+  { value: "Rejected", label: "Rejected" },
 ];
 
 export const STAGE_STYLES: Record<Stage, string> = {
