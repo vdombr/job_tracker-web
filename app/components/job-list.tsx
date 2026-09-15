@@ -7,9 +7,15 @@ interface JobListProps {
   jobs: Job[];
   onCreateJob: (job: Job) => void;
   onStageChange: (id: string, stage: Stage) => void;
+  onEditJob: (job: Job) => void;
 }
 
-export function JobList({ jobs, onCreateJob, onStageChange }: JobListProps) {
+export function JobList({
+  jobs,
+  onCreateJob,
+  onStageChange,
+  onEditJob,
+}: JobListProps) {
   // Only one card can be expanded at a time — opening one closes the others.
   const [expandedId, setExpandedId] = useState<string | null>(null);
   // Only one stage menu can be open at a time — opening one closes the others.
@@ -54,6 +60,7 @@ export function JobList({ jobs, onCreateJob, onStageChange }: JobListProps) {
             onStageMenuToggle={handleStageMenuToggle}
             onStageMenuClose={handleStageMenuClose}
             onStageChange={onStageChange}
+            onEdit={onEditJob}
           />
         ))
       )}

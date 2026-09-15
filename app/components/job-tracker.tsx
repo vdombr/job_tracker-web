@@ -35,6 +35,12 @@ export function JobTracker({ initialJobs }: JobTrackerProps) {
     );
   }, []);
 
+  const handleEditJob = useCallback((updated: Job) => {
+    setJobs((current) =>
+      current.map((job) => (job.id === updated.id ? updated : job))
+    );
+  }, []);
+
   return (
     <>
       <StatsGrid jobs={jobs} />
@@ -48,6 +54,7 @@ export function JobTracker({ initialJobs }: JobTrackerProps) {
         jobs={filteredJobs}
         onCreateJob={handleCreateJob}
         onStageChange={handleStageChange}
+        onEditJob={handleEditJob}
       />
     </>
   );
