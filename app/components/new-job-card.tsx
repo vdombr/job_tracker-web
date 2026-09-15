@@ -58,8 +58,8 @@ export const NewJobCard = memo(function NewJobCard({
 
     onCreateJob({
       id: String(Date.now()),
-      title: String(data.get("position") ?? "").trim() || "New Position",
-      company: String(data.get("company") ?? "").trim() || "Unknown Company",
+      title: String(data.get("position") ?? "").trim(),
+      company: String(data.get("company") ?? "").trim(),
       stage: "Applied",
       elapsed: formatElapsed(String(data.get("appliedDate") ?? "").trim()),
       hrContact: String(data.get("hrContact") ?? "").trim() || "N/A",
@@ -96,6 +96,7 @@ export const NewJobCard = memo(function NewJobCard({
               label="Company"
               name="company"
               type="text"
+              required
               placeholder="e.g. Acme Corp"
             />
             <Field
@@ -117,6 +118,7 @@ export const NewJobCard = memo(function NewJobCard({
               label="Position"
               name="position"
               type="text"
+              required
               placeholder="e.g. Engineer"
             />
             <Field
@@ -127,7 +129,7 @@ export const NewJobCard = memo(function NewJobCard({
             />
             <button
               type="submit"
-              className="flex h-10.5 items-center justify-center rounded-[10px] bg-accent px-6 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-px hover:brightness-110 hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] active:translate-y-0"
+              className="flex h-10.5 cursor-pointer items-center justify-center rounded-[10px] bg-accent px-6 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-px hover:brightness-110 hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] active:translate-y-0"
             >
               Create Job
             </button>
