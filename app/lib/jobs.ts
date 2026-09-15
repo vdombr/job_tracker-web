@@ -1,4 +1,4 @@
-export const STAGES = ["Applied", "Interviewing", "Offer", "Rejected"] as const;
+export const STAGES = ["Applied", "Interviewing", "Offer", "Ghosted", "Rejected"] as const;
 
 export type Stage = (typeof STAGES)[number];
 
@@ -19,6 +19,7 @@ export const STAGE_FILTERS: readonly { value: StageFilter; label: string }[] = [
   { value: "Applied", label: "Applied" },
   { value: "Interviewing", label: "Interviewing" },
   { value: "Offer", label: "Offer" },
+  { value: "Ghosted", label: "Ghosted" },
   { value: "Rejected", label: "Rejected" },
 ];
 
@@ -26,6 +27,7 @@ export const STAGE_STYLES: Record<Stage, string> = {
   Applied: "bg-slate-100 text-slate-600",
   Interviewing: "bg-accent-soft text-accent",
   Offer: "bg-amber-100 text-amber-800",
+  Ghosted: "bg-teal-100 text-teal-800",
   Rejected: "bg-red-100 text-red-800",
 };
 
@@ -36,6 +38,7 @@ export const STAGE_DOTS: Record<Stage, string> = {
   Applied: "bg-slate-400",
   Interviewing: "bg-accent",
   Offer: "bg-amber-500",
+  Ghosted: "bg-teal-500",
   Rejected: "bg-red-500",
 };
 
