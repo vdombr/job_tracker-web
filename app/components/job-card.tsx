@@ -32,6 +32,9 @@ export const JobCard = memo(function JobCard({
   const [isEditing, setIsEditing] = useState(false);
   const toggle = () => onToggle(job.id);
 
+  const displayUrl =
+    job.url.length > 35 ? `${job.url.slice(0, 32)}…` : job.url;
+
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
@@ -203,15 +206,16 @@ export const JobCard = memo(function JobCard({
               <dd className="break-all text-[0.9375rem]">
                 <a
                   href={job.url}
+                  title={job.url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-medium text-accent hover:underline"
                 >
-                  {job.url || "#"}
+                  {displayUrl || "#"}
                 </a>
               </dd>
             </div>
-            <div className="flex items-end justify-start">
+            <div className="flex items-end justify-end">
               <button
                 type="button"
                 onClick={() => setIsEditing(true)}
