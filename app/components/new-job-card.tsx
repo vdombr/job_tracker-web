@@ -1,5 +1,10 @@
 import { memo } from "react";
-import type { FormEvent, InputHTMLAttributes, KeyboardEvent } from "react";
+import type {
+  FormEvent,
+  InputHTMLAttributes,
+  KeyboardEvent,
+  TextareaHTMLAttributes,
+} from "react";
 import { Plus } from "lucide-react";
 import { formatElapsed, type Job } from "@/app/lib/jobs";
 import { Collapsible } from "./collapsible";
@@ -36,6 +41,25 @@ function Field({ id, label, ...inputProps }: FieldProps) {
   );
 }
 
+interface TextAreaFieldProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
+  id: string;
+  label: string;
+}
+
+function TextAreaField({ id, label, rows = 3, ...textareaProps }: TextAreaFieldProps) {
+  return (
+    <div className="flex flex-col gap-2">
+      <label
+        htmlFor={id}
+        className="text-xs font-semibold uppercase tracking-wider text-muted"
+      >
+        {label}
+      </label>
+      <textarea id={id} rows={rows} {...textareaProps} className={`${inputClasses} resize-y`} />
+    </div>
+  );
+}
+
 export const NewJobCard = memo(function NewJobCard({
   onCreateJob,
   expanded,
@@ -64,6 +88,7 @@ export const NewJobCard = memo(function NewJobCard({
       elapsed: formatElapsed(String(data.get("appliedDate") ?? "").trim()),
       hrContact: String(data.get("hrContact") ?? "").trim() || "N/A",
       url: String(data.get("url") ?? "").trim() || "#",
+      commentary: String(data.get("commentary") ?? "").trim(),
     });
 
     form.reset();
@@ -121,12 +146,25 @@ export const NewJobCard = memo(function NewJobCard({
               required
               placeholder="e.g. Engineer"
             />
+          </div>
+          <div className="mt-6">
+            <TextAreaField
+              id="new-job-commentary"
+              label="Commentary"
+              name="commentary"
+              placeholder="Notes, salary range, next steps..."
+            />
+          </div>
+          <div className="mt-6 grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] items-end gap-6">
             <Field
               id="new-job-date"
               label="Applied Date"
               name="appliedDate"
               type="date"
             />
+            {/* Empty tracks keep this row's column widths in sync with the grid above. */}
+            <div aria-hidden />
+            <div aria-hidden />
             <button
               type="submit"
               className="flex h-10.5 cursor-pointer items-center justify-center rounded-[10px] bg-accent px-6 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-px hover:brightness-110 hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] active:translate-y-0"

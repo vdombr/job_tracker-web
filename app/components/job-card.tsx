@@ -48,6 +48,7 @@ export const JobCard = memo(function JobCard({
       company: String(data.get("company") ?? "").trim(),
       hrContact: String(data.get("hrContact") ?? "").trim() || "N/A",
       url: String(data.get("url") ?? "").trim() || "#",
+      commentary: String(data.get("commentary") ?? "").trim(),
     });
     setIsEditing(false);
   };
@@ -152,6 +153,24 @@ export const JobCard = memo(function JobCard({
                   className={editInputClasses}
                 />
               </div>
+            </div>
+            <div className="mt-6 flex flex-col gap-2">
+              <label
+                htmlFor={`edit-commentary-${job.id}`}
+                className="text-xs font-semibold uppercase tracking-wider text-muted"
+              >
+                Commentary
+              </label>
+              <textarea
+                id={`edit-commentary-${job.id}`}
+                name="commentary"
+                rows={3}
+                defaultValue={job.commentary}
+                placeholder="Notes, follow-ups, interview details…"
+                className={`${editInputClasses} resize-y`}
+              />
+            </div>
+            <div className="mt-6 flex items-center gap-4">
               <button
                 type="submit"
                 className="flex h-10.5 cursor-pointer items-center justify-center rounded-[10px] bg-accent px-6 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-px hover:brightness-110 hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] active:translate-y-0"
@@ -165,8 +184,8 @@ export const JobCard = memo(function JobCard({
               >
                 Cancel
               </button>
-            </div>
-          </form>
+          </div>
+        </form>
         ) : (
           <dl className="mt-3 grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-8 border-t border-line px-7 py-5">
             <div className="flex flex-col gap-1.5">
@@ -201,6 +220,14 @@ export const JobCard = memo(function JobCard({
                 <Pencil size={15} aria-hidden />
                 Edit
               </button>
+            </div>
+            <div className="col-span-full flex flex-col gap-1.5">
+              <dt className="text-xs font-semibold uppercase tracking-wider text-muted">
+                Commentary
+              </dt>
+              <dd className="whitespace-pre-wrap break-words text-[0.9375rem] text-ink">
+                {job.commentary || "—"}
+              </dd>
             </div>
           </dl>
         )}

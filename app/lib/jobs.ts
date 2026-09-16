@@ -12,6 +12,7 @@ export interface Job {
   elapsed: string;
   hrContact: string;
   url: string;
+  commentary: string;
 }
 
 export const STAGE_FILTERS: readonly { value: StageFilter; label: string }[] = [
@@ -51,6 +52,7 @@ export const initialJobs: Job[] = [
     elapsed: "3 days ago",
     hrContact: "Sarah Jenkins",
     url: "https://linear.app",
+    commentary: "",
   },
   {
     id: "2",
@@ -60,6 +62,7 @@ export const initialJobs: Job[] = [
     elapsed: "5 days ago",
     hrContact: "Alex Rivera",
     url: "https://vercel.com",
+    commentary: "",
   },
   {
     id: "3",
@@ -69,6 +72,7 @@ export const initialJobs: Job[] = [
     elapsed: "1 week ago",
     hrContact: "Sam Smith",
     url: "https://notion.so",
+    commentary: "",
   },
 ];
 
