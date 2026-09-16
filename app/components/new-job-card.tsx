@@ -6,7 +6,7 @@ import type {
   TextareaHTMLAttributes,
 } from "react";
 import { Plus } from "lucide-react";
-import { formatElapsed, type Job } from "@/app/lib/jobs";
+import { todayISO, type Job } from "@/app/lib/jobs";
 import { Collapsible } from "./collapsible";
 
 /** Identity of the new-job card in the list's single-expansion state. */
@@ -85,7 +85,7 @@ export const NewJobCard = memo(function NewJobCard({
       title: String(data.get("position") ?? "").trim(),
       company: String(data.get("company") ?? "").trim(),
       stage: "Applied",
-      elapsed: formatElapsed(String(data.get("appliedDate") ?? "").trim()),
+      appliedDate: String(data.get("appliedDate") ?? "").trim() || todayISO(),
       hrContact: String(data.get("hrContact") ?? "").trim() || "N/A",
       url: String(data.get("url") ?? "").trim() || "#",
       commentary: String(data.get("commentary") ?? "").trim(),

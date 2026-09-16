@@ -9,7 +9,7 @@ export interface Job {
   title: string;
   company: string;
   stage: Stage;
-  elapsed: string;
+  appliedDate: string;
   hrContact: string;
   url: string;
   commentary: string;
@@ -49,7 +49,7 @@ export const initialJobs: Job[] = [
     title: "Senior Frontend Engineer",
     company: "Linear",
     stage: "Interviewing",
-    elapsed: "3 days ago",
+    appliedDate: daysAgoISO(3),
     hrContact: "Sarah Jenkins",
     url: "https://linear.app",
     commentary: "",
@@ -59,7 +59,7 @@ export const initialJobs: Job[] = [
     title: "Product Designer",
     company: "Vercel",
     stage: "Applied",
-    elapsed: "5 days ago",
+    appliedDate: daysAgoISO(5),
     hrContact: "Alex Rivera",
     url: "https://vercel.com",
     commentary: "",
@@ -69,20 +69,42 @@ export const initialJobs: Job[] = [
     title: "Software Engineer",
     company: "Notion",
     stage: "Offer",
-    elapsed: "1 week ago",
+    appliedDate: daysAgoISO(7),
     hrContact: "Sam Smith",
     url: "https://notion.so",
     commentary: "",
   },
 ];
 
+/** Formats a date as YYYY-MM-DD in local time. */
+function toISODate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/** Today's local date as YYYY-MM-DD. */
+export function todayISO(): string {
+  return toISODate(new Date());
+}
+
+/** The local date `days` days before today, as YYYY-MM-DD (used by seed data). */
+function daysAgoISO(days: number): string {
+  return toISODate(new Date(Date.now() - days * 86_400_000));
+}
+
 /** Derives a human-readable "time elapsed" label from an applied date (YYYY-MM-DD). */
 export function formatElapsed(appliedDate?: string): string {
-  if (!appliedDate) return "Just now";
+  if (!appliedDate) return "Today";
   const applied = new Date(`${appliedDate}T00:00:00`);
-  if (Number.isNaN(applied.getTime())) return "Just now";
+  if (Number.isNaN(applied.getTime())) return "Today";
 
-  const days = Math.floor((Date.now() - applied.getTime()) / 86_400_000);
+  // Compare midnights to midnight so the label is stable throughout the day
+  // and correct across DST transitions.
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const days = Math.round((today.getTime() - applied.getTime()) / 86_400_000);
   if (days <= 0) return "Today";
   if (days === 1) return "Yesterday";
   if (days < 7) return `${days} days ago`;

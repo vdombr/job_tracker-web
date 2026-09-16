@@ -1,7 +1,7 @@
 import { memo, useState } from "react";
 import type { FormEvent, KeyboardEvent } from "react";
 import { Building2, Clock, Pencil } from "lucide-react";
-import type { Job, Stage } from "@/app/lib/jobs";
+import { formatElapsed, type Job, type Stage } from "@/app/lib/jobs";
 import { Collapsible } from "./collapsible";
 import { StageBadge } from "./stage-badge";
 
@@ -86,7 +86,7 @@ export const JobCard = memo(function JobCard({
         />
         <span className="flex items-center gap-2 justify-self-start text-sm text-muted md:justify-self-auto">
           <Clock size={14} aria-hidden />
-          {job.elapsed}
+          {formatElapsed(job.appliedDate)}
         </span>
       </div>
       <Collapsible expanded={expanded}>
