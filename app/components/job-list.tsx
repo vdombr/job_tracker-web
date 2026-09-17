@@ -5,6 +5,9 @@ import { NEW_JOB_ID, NewJobCard } from "./new-job-card";
 
 interface JobListProps {
   jobs: Job[];
+  totalCount?: number;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
   onCreateJob: (job: Job) => void;
   onStageChange: (id: string, stage: Stage) => void;
   onEditJob: (job: Job) => void;
@@ -12,6 +15,9 @@ interface JobListProps {
 
 export function JobList({
   jobs,
+  totalCount,
+  hasMore,
+  onLoadMore,
   onCreateJob,
   onStageChange,
   onEditJob,
@@ -63,6 +69,15 @@ export function JobList({
             onEdit={onEditJob}
           />
         ))
+      )}
+      {hasMore && (
+        <button
+          type="button"
+          onClick={onLoadMore}
+          className="mx-auto flex h-10.5 cursor-pointer items-center gap-2 rounded-[10px] border border-line bg-surface px-6 text-sm font-medium text-ink transition-all duration-200 hover:border-accent hover:text-accent"
+        >
+          Load more ({jobs.length} of {totalCount} shown)
+        </button>
       )}
     </section>
   );
