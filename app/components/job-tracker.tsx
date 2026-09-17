@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import type { Job, Stage, StageFilter } from "@/app/lib/jobs";
+import { useStoredJobs } from "@/app/lib/use-stored-jobs";
 import { JobList } from "./job-list";
 import { SearchControls } from "./search-controls";
 import { StatsGrid } from "./stats-grid";
@@ -11,7 +12,7 @@ interface JobTrackerProps {
 }
 
 export function JobTracker({ initialJobs }: JobTrackerProps) {
-  const [jobs, setJobs] = useState<Job[]>(initialJobs);
+  const { jobs, setJobs } = useStoredJobs(initialJobs);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<StageFilter>("all");
 
@@ -25,21 +26,30 @@ export function JobTracker({ initialJobs }: JobTrackerProps) {
         job.company.toLowerCase().includes(search))
   );
 
-  const handleCreateJob = useCallback((job: Job) => {
-    setJobs((current) => [job, ...current]);
-  }, []);
+  const handleCreateJob = useCallback(
+    (job: Job) => {
+      setJobs((current) => [job, ...current]);
+    },
+    [setJobs]
+  );
 
-  const handleStageChange = useCallback((id: string, stage: Stage) => {
-    setJobs((current) =>
-      current.map((job) => (job.id === id ? { ...job, stage } : job))
-    );
-  }, []);
+  const handleStageChange = useCallback(
+    (id: string, stage: Stage) => {
+      setJobs((current) =>
+        current.map((job) => (job.id === id ? { ...job, stage } : job))
+      );
+    },
+    [setJobs]
+  );
 
-  const handleEditJob = useCallback((updated: Job) => {
-    setJobs((current) =>
-      current.map((job) => (job.id === updated.id ? updated : job))
-    );
-  }, []);
+  const handleEditJob = useCallback(
+    (updated: Job) => {
+      setJobs((current) =>
+        current.map((job) => (job.id === updated.id ? updated : job))
+      );
+    },
+    [setJobs]
+  );
 
   return (
     <>
