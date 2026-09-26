@@ -2,7 +2,9 @@
 
 import { useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, Lock, Mail, User } from "lucide-react";
+import { apiFetch, setToken } from "@/app/lib/auth";
 
 type AuthMode = "signin" | "signup";
 
@@ -57,6 +59,9 @@ export function AuthForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const router = useRouter();
 
   const isSignup = mode === "signup";
 
@@ -65,17 +70,42 @@ export function AuthForm() {
     setStatus(null);
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (isSignup && password.length < 8) {
-      setStatus("Password must be at least 8 characters.");
+
+    if (isSignup) {
+      if (password.length < 8) {
+        setStatus("Password must be at least 8 characters.");
+        return;
+      }
+      setStatus(
+        "Demo mode — account creation isn't connected to a backend yet.",
+      );
       return;
     }
-    setStatus(
-      isSignup
-        ? "Demo mode — account creation isn't connected to a backend yet."
-        : "Demo mode — sign in isn't connected to a backend yet.",
-    );
+
+    setSubmitting(true);
+    try {
+      const res = await apiFetch("/sign_in", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      if (res.ok) {
+        setToken(await res.text());
+        router.push("/");
+        return;
+      }
+      // The backend answers 404 for both unknown emails and wrong passwords,
+      // so a single message keeps accounts from being probed.
+      setStatus("Invalid email or password.");
+    } catch {
+      setStatus(
+        "Couldn't reach the server. Check your connection and try again.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -134,9 +164,14 @@ export function AuthForm() {
 
           <button
             type="submit"
-            className="w-full cursor-pointer rounded-[10px] bg-accent py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-px hover:brightness-110 hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] active:translate-y-0"
+            disabled={submitting}
+            className="w-full cursor-pointer rounded-[10px] bg-accent py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-px hover:brightness-110 hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isSignup ? "Create account" : "Sign in"}
+            {submitting
+              ? "Signing in…"
+              : isSignup
+                ? "Create account"
+                : "Sign in"}
           </button>
         </form>
 
