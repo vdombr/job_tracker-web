@@ -1,97 +1,43 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import type { Job, Stage, StageFilter } from "@/app/lib/jobs";
-import { useStoredJobs } from "@/app/lib/use-stored-jobs";
-import { JobList } from "./job-list";
-import { SearchControls } from "./search-controls";
-import { StatsGrid } from "./stats-grid";
-
-const PAGE_SIZE = 10;
+import Link from "next/link";
+import type { Job } from "@/app/lib/jobs";
+import { useAuthMode } from "@/app/lib/use-auth-mode";
+import { ApiJobTracker } from "./api-job-tracker";
+import { LocalJobTracker } from "./local-job-tracker";
 
 interface JobTrackerProps {
   initialJobs: Job[];
 }
 
+/**
+ * Data-source dispatcher, keyed off the stored JWT:
+ * - "api"     → backend-backed tracker (authenticated)
+ * - "expired" → sign-in prompt (a token was present but is no longer valid)
+ * - "local"   → existing localStorage behavior (anonymous)
+ */
 export function JobTracker({ initialJobs }: JobTrackerProps) {
-  const { jobs, setJobs } = useStoredJobs(initialJobs);
-  const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<StageFilter>("all");
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const mode = useAuthMode();
 
-  // Derived during render — no effect needed to keep the list in sync.
-  const search = query.trim().toLowerCase();
-  const filteredJobs = jobs.filter(
-    (job) =>
-      (filter === "all" || job.stage === filter) &&
-      (search === "" ||
-        job.title.toLowerCase().includes(search) ||
-        job.company.toLowerCase().includes(search))
-  );
+  if (mode === "api") return <ApiJobTracker />;
+  if (mode === "expired") return <SessionExpiredPrompt />;
+  return <LocalJobTracker initialJobs={initialJobs} />;
+}
 
-  // Derived during render — no effect (rerender-derived-state-no-effect).
-  const visibleJobs = filteredJobs.slice(0, visibleCount);
-
-  const handleCreateJob = useCallback(
-    (job: Job) => {
-      setJobs((current) => [job, ...current]);
-    },
-    [setJobs]
-  );
-
-  const handleStageChange = useCallback(
-    (id: string, stage: Stage) => {
-      setJobs((current) =>
-        current.map((job) => (job.id === id ? { ...job, stage } : job))
-      );
-    },
-    [setJobs]
-  );
-
-  const handleEditJob = useCallback(
-    (updated: Job) => {
-      setJobs((current) =>
-        current.map((job) => (job.id === updated.id ? updated : job))
-      );
-    },
-    [setJobs]
-  );
-
-  // Reset pagination in the event handlers (rerender-move-effect-to-event).
-  const handleQueryChange = useCallback((q: string) => {
-    setQuery(q);
-    setVisibleCount(PAGE_SIZE);
-  }, []);
-
-  const handleFilterChange = useCallback((f: StageFilter) => {
-    setFilter(f);
-    setVisibleCount(PAGE_SIZE);
-  }, []);
-
-  const handleLoadMore = useCallback(
-    () =>
-      setVisibleCount((c) => Math.min(c + PAGE_SIZE, filteredJobs.length)),
-    [filteredJobs.length]
-  );
-
+/** Shown when a stored token expired or was rejected by the API. */
+function SessionExpiredPrompt() {
   return (
-    <>
-      <StatsGrid jobs={jobs} />
-      <SearchControls
-        query={query}
-        filter={filter}
-        onQueryChange={handleQueryChange}
-        onFilterChange={handleFilterChange}
-      />
-      <JobList
-        jobs={visibleJobs}
-        totalCount={filteredJobs.length}
-        hasMore={visibleCount < filteredJobs.length}
-        onLoadMore={handleLoadMore}
-        onCreateJob={handleCreateJob}
-        onStageChange={handleStageChange}
-        onEditJob={handleEditJob}
-      />
-    </>
+    <div className="flex flex-col items-center gap-4 rounded-[20px] border border-line bg-surface px-8 py-16 text-center shadow-[0_4px_6px_-1px_rgba(0,0,0,0.02),0_2px_4px_-1px_rgba(0,0,0,0.01)]">
+      <p className="text-sm font-medium text-ink">Your session has expired.</p>
+      <p className="text-sm text-muted">
+        Sign in again to continue tracking your applications.
+      </p>
+      <Link
+        href="/sign-in"
+        className="h-10.5 rounded-[10px] bg-accent px-6 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-px hover:brightness-110 hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] active:translate-y-0"
+      >
+        Sign in
+      </Link>
+    </div>
   );
 }

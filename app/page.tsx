@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { HeaderAuth } from "@/app/components/header-auth";
 import { JobTracker } from "@/app/components/job-tracker";
 import { initialJobs } from "@/app/lib/jobs";
 
@@ -10,12 +10,7 @@ export default function Page() {
           <h1 className="mb-2 text-4xl font-bold tracking-[-0.035em] text-ink">
             Job Tracker
           </h1>
-          <Link
-            href="/sign-in"
-            className="flex h-10 shrink-0 items-center justify-center rounded-[10px] bg-accent px-5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-px hover:brightness-110 hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] active:translate-y-0"
-          >
-            Login
-          </Link>
+          <HeaderAuth />
         </div>
         <p className="text-muted">Manage your applications and track progress</p>
       </header>
