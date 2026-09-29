@@ -30,13 +30,23 @@ interface JobRecord {
   applied_at: string | null;
 }
 
-interface ListResponse {
-  data: JobRecord[];
-  meta?: unknown;
+/** The backend's `meta.paginate` block for list endpoints. */
+export interface PaginateMeta {
+  page: number;
+  limit: number;
+  prev_page: number | null;
+  next_page: number | null;
+  total_pages: number;
+  total_records: number;
 }
 
-/** High enough that client-side "Load more" pagination keeps working unchanged. */
-const LIST_LIMIT = 200;
+interface ListResponse {
+  data: JobRecord[];
+  meta: { paginate: PaginateMeta };
+}
+
+/** Page size for server-side list pagination. */
+const PAGE_SIZE = 10;
 
 /**
  * Shared request wrapper. A 401 means the session is gone (expired token or
@@ -131,10 +141,14 @@ export function toUpdatePayload(job: Job): Record<string, string | number> {
   return payload;
 }
 
-/** Fetches the job list from the API, mapped to frontend Jobs. */
-export async function fetchJobs(): Promise<Job[]> {
-  const body = await request<ListResponse>(`/job_apps?paginate[limit]=${LIST_LIMIT}`);
-  return body.data.map(toJob);
+/** Fetches one page of the job list from the API, mapped to frontend Jobs. */
+export async function fetchJobsPage(
+  page: number
+): Promise<{ jobs: Job[]; meta: PaginateMeta }> {
+  const body = await request<ListResponse>(
+    `/job_apps?paginate[limit]=${PAGE_SIZE}&paginate[page]=${page}`
+  );
+  return { jobs: body.data.map(toJob), meta: body.meta.paginate };
 }
 
 /** Creates a job via the API and returns the server-persisted version. */

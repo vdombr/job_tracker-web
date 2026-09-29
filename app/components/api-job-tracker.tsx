@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Job, Stage } from "@/app/lib/jobs";
-import { createJob, fetchJobs, updateJob } from "@/app/lib/api-jobs";
+import { createJob, fetchJobsPage, updateJob } from "@/app/lib/api-jobs";
 import { JobBoard } from "./job-board";
 
 type Status = "loading" | "error" | "ready";
 
 /**
- * Authenticated mode: job list loaded from the backend API. Mutations are
+ * Authenticated mode: job list loaded from the backend API with server-side
+ * pagination (one page at a time, appended via "Load more"). Mutations are
  * optimistic — local state updates immediately and the request is issued in
  * the background; on failure the change is reverted, a notice is shown, and
  * the list is re-fetched to restore consistency with the server.
@@ -18,25 +19,42 @@ export function ApiJobTracker() {
   const [status, setStatus] = useState<Status>("loading");
   const [notice, setNotice] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  // Server pagination: next page to fetch (null = last page) and the server's
+  // total record count for the "X of Y shown" label.
+  const [nextPage, setNextPage] = useState<number | null>(null);
+  const [totalRecords, setTotalRecords] = useState(0);
 
-  // Latest jobs for async handlers — avoids stale closures without making the
-  // callbacks depend on `jobs` (which would churn their identity).
+  // Latest jobs/next-page for async handlers — avoids stale closures without
+  // making the callbacks depend on state (which would churn their identity).
   const jobsRef = useRef<Job[]>([]);
   useEffect(() => {
     jobsRef.current = jobs;
   }, [jobs]);
+  const nextPageRef = useRef<number | null>(null);
+  useEffect(() => {
+    nextPageRef.current = nextPage;
+  }, [nextPage]);
 
   // Guards re-fetches from blanking the list while a full reload is in flight.
   const hasLoadedRef = useRef(false);
+  // True while a "Load more" page fetch is in flight (guards double-clicks).
+  const loadingMoreRef = useRef(false);
+  // Bumped on every (re)load so in-flight page loads can detect they're stale.
+  const generationRef = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
+    const generation = ++generationRef.current;
     if (!hasLoadedRef.current) setStatus("loading");
-    fetchJobs()
-      .then((loaded) => {
-        if (cancelled) return;
+    // A full (re)load supersedes any in-flight page load.
+    loadingMoreRef.current = false;
+    fetchJobsPage(1)
+      .then(({ jobs: loaded, meta }) => {
+        if (cancelled || generation !== generationRef.current) return;
         hasLoadedRef.current = true;
         setJobs(loaded);
+        setNextPage(meta.next_page);
+        setTotalRecords(meta.total_records);
         setNotice(null);
         setStatus("ready");
       })
@@ -58,6 +76,37 @@ export function ApiJobTracker() {
 
   const resync = useCallback(() => {
     setReloadKey((key) => key + 1);
+  }, []);
+
+  /**
+   * Loads the next server page and appends it to the list. No-op when there
+   * are no more pages or a load is already in flight; on failure the loaded
+   * list is kept and a notice is shown (retry by clicking again).
+   */
+  const handleLoadMore = useCallback(() => {
+    const page = nextPageRef.current;
+    if (page === null || loadingMoreRef.current) return;
+    const generation = generationRef.current;
+    loadingMoreRef.current = true;
+    fetchJobsPage(page)
+      .then(({ jobs: loaded, meta }) => {
+        if (generation !== generationRef.current) return; // a resync superseded it
+        loadingMoreRef.current = false;
+        // Dedupe by id in case the server's ordering shifted between pages.
+        setJobs((current) => {
+          const seen = new Set(current.map((job) => job.id));
+          return [...current, ...loaded.filter((job) => !seen.has(job.id))];
+        });
+        setNextPage(meta.next_page);
+        setTotalRecords(meta.total_records);
+      })
+      .catch((error: unknown) => {
+        if (generation !== generationRef.current) return;
+        loadingMoreRef.current = false;
+        setNotice(
+          error instanceof Error ? error.message : "Couldn't load more applications."
+        );
+      });
   }, []);
 
   const handleCreateJob = useCallback(
@@ -164,6 +213,9 @@ export function ApiJobTracker() {
         onCreateJob={handleCreateJob}
         onStageChange={handleStageChange}
         onEditJob={handleEditJob}
+        hasMore={nextPage !== null}
+        onLoadMore={handleLoadMore}
+        totalCount={totalRecords}
       />
     </>
   );
