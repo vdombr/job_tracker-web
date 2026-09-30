@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import type { Job, Stage, StageFilter } from "@/app/lib/jobs";
+import type { JobStats } from "@/app/lib/api-jobs";
 import { JobList } from "./job-list";
 import { SearchControls } from "./search-controls";
 import { StatsGrid } from "./stats-grid";
@@ -19,6 +20,15 @@ interface JobBoardProps {
   onLoadMore?: () => void;
   /** API mode: total record count reported by the server. */
   totalCount?: number;
+  /** API mode: server-computed stats across all pages; when absent, the grid
+   * counts only the loaded jobs (local mode never passes it). */
+  stats?: JobStats | null;
+  /** API mode: externally controlled stage filter. When both this and
+   * `onRemoteFilterChange` are provided, the chip state is driven by them and
+   * changes are reported up instead of stored internally (local mode keeps
+   * its internal state). */
+  remoteFilter?: StageFilter;
+  onRemoteFilterChange?: (filter: StageFilter) => void;
 }
 
 /**
@@ -36,10 +46,17 @@ export function JobBoard({
   hasMore,
   onLoadMore,
   totalCount,
+  stats,
+  remoteFilter,
+  onRemoteFilterChange,
 }: JobBoardProps) {
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<StageFilter>("all");
+  const [internalFilter, setInternalFilter] = useState<StageFilter>("all");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
+  // Controlled (API mode) or internal (local mode) — derived during render,
+  // no sync effect (rerender-derived-state-no-effect).
+  const filter = onRemoteFilterChange ? remoteFilter ?? "all" : internalFilter;
 
   // Derived during render — no effect needed to keep the list in sync.
   const search = query.trim().toLowerCase();
@@ -66,10 +83,17 @@ export function JobBoard({
     setVisibleCount(PAGE_SIZE);
   }, []);
 
-  const handleFilterChange = useCallback((f: StageFilter) => {
-    setFilter(f);
-    setVisibleCount(PAGE_SIZE);
-  }, []);
+  const handleFilterChange = useCallback(
+    (f: StageFilter) => {
+      if (onRemoteFilterChange) {
+        onRemoteFilterChange(f);
+      } else {
+        setInternalFilter(f);
+        setVisibleCount(PAGE_SIZE);
+      }
+    },
+    [onRemoteFilterChange]
+  );
 
   const handleLoadMore = useCallback(
     () =>
@@ -79,7 +103,7 @@ export function JobBoard({
 
   return (
     <>
-      <StatsGrid jobs={jobs} />
+      <StatsGrid jobs={jobs} stats={stats} />
       <SearchControls
         query={query}
         filter={filter}

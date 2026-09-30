@@ -1,8 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Job, Stage } from "@/app/lib/jobs";
-import { createJob, fetchJobsPage, updateJob } from "@/app/lib/api-jobs";
+import type { Job, Stage, StageFilter } from "@/app/lib/jobs";
+import {
+  createJob,
+  fetchJobsPage,
+  fetchStats,
+  updateJob,
+  type JobStats,
+} from "@/app/lib/api-jobs";
 import { JobBoard } from "./job-board";
 
 type Status = "loading" | "error" | "ready";
@@ -19,10 +25,16 @@ export function ApiJobTracker() {
   const [status, setStatus] = useState<Status>("loading");
   const [notice, setNotice] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  // Stage filter — sent to the server on every list fetch; pagination then
+  // runs over the filtered set.
+  const [stageFilter, setStageFilter] = useState<StageFilter>("all");
   // Server pagination: next page to fetch (null = last page) and the server's
   // total record count for the "X of Y shown" label.
   const [nextPage, setNextPage] = useState<number | null>(null);
   const [totalRecords, setTotalRecords] = useState(0);
+  // Server-computed stats across all pages; null while loading or if the
+  // stats endpoint failed (the grid then falls back to counting loaded jobs).
+  const [stats, setStats] = useState<JobStats | null>(null);
 
   // Latest jobs/next-page for async handlers — avoids stale closures without
   // making the callbacks depend on state (which would churn their identity).
@@ -34,6 +46,11 @@ export function ApiJobTracker() {
   useEffect(() => {
     nextPageRef.current = nextPage;
   }, [nextPage]);
+  // Current filter for the stable "Load more" callback (see jobsRef above).
+  const stageFilterRef = useRef<StageFilter>("all");
+  useEffect(() => {
+    stageFilterRef.current = stageFilter;
+  }, [stageFilter]);
 
   // Guards re-fetches from blanking the list while a full reload is in flight.
   const hasLoadedRef = useRef(false);
@@ -48,7 +65,9 @@ export function ApiJobTracker() {
     if (!hasLoadedRef.current) setStatus("loading");
     // A full (re)load supersedes any in-flight page load.
     loadingMoreRef.current = false;
-    fetchJobsPage(1)
+    // The previous page's jobs stay visible until this one lands
+    // (hasLoadedRef skips the skeleton).
+    fetchJobsPage(1, stageFilter)
       .then(({ jobs: loaded, meta }) => {
         if (cancelled || generation !== generationRef.current) return;
         hasLoadedRef.current = true;
@@ -72,10 +91,53 @@ export function ApiJobTracker() {
     return () => {
       cancelled = true;
     };
+  }, [reloadKey, stageFilter]);
+
+  // Stats are global (the endpoint takes no filter), so this only tracks
+  // reloads — switching the stage filter must not re-fetch them.
+  useEffect(() => {
+    let cancelled = false;
+    fetchStats()
+      .then((loaded) => {
+        if (cancelled) return;
+        setStats(loaded);
+      })
+      .catch(() => {
+        // Non-fatal: stats stay null/last-known and the grid falls back to
+        // counting loaded jobs, so a stats outage never blanks the board.
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [reloadKey]);
 
   const resync = useCallback(() => {
     setReloadKey((key) => key + 1);
+  }, []);
+
+  /**
+   * Switches the server-side stage filter. The old list stays visible until
+   * the new page 1 lands; resetting `nextPage` hides "Load more" during the
+   * fetch (the generation guard already discards any in-flight one).
+   */
+  const handleFilterChange = useCallback((filter: StageFilter) => {
+    setStageFilter(filter);
+    setNextPage(null);
+  }, []);
+
+  /**
+   * Optimistically moves one application between stage counts. Stage names are
+   * the Title-Case mirror of the API's lowercase keys (see api-jobs.ts).
+   */
+  const moveStageStats = useCallback((from: Stage, to: Stage) => {
+    if (from === to) return;
+    const fromKey = from.toLowerCase() as keyof JobStats;
+    const toKey = to.toLowerCase() as keyof JobStats;
+    setStats((current) =>
+      current
+        ? { ...current, [fromKey]: current[fromKey] - 1, [toKey]: current[toKey] + 1 }
+        : current
+    );
   }, []);
 
   /**
@@ -88,7 +150,7 @@ export function ApiJobTracker() {
     if (page === null || loadingMoreRef.current) return;
     const generation = generationRef.current;
     loadingMoreRef.current = true;
-    fetchJobsPage(page)
+    fetchJobsPage(page, stageFilterRef.current)
       .then(({ jobs: loaded, meta }) => {
         if (generation !== generationRef.current) return; // a resync superseded it
         loadingMoreRef.current = false;
@@ -113,6 +175,11 @@ export function ApiJobTracker() {
     (job: Job) => {
       // Optimistic prepend with the temp id; replaced by the server record.
       setJobs((current) => [job, ...current]);
+      setStats((current) =>
+        current
+          ? { ...current, total: current.total + 1, applied: current.applied + 1 }
+          : current
+      );
       createJob(job)
         .then((created) => {
           setNotice(null);
@@ -136,6 +203,7 @@ export function ApiJobTracker() {
       const target = jobsRef.current.find((job) => job.id === id);
       if (!target) return;
       setJobs((current) => current.map((job) => (job.id === id ? { ...job, stage } : job)));
+      moveStageStats(target.stage, stage);
       // The update contract requires the full record even for a stage change.
       updateJob({ ...target, stage })
         .then((updated) => {
@@ -151,13 +219,14 @@ export function ApiJobTracker() {
           resync();
         });
     },
-    [resync]
+    [resync, moveStageStats]
   );
 
   const handleEditJob = useCallback(
     (updated: Job) => {
       const previous = jobsRef.current.find((job) => job.id === updated.id);
       setJobs((current) => current.map((job) => (job.id === updated.id ? updated : job)));
+      if (previous) moveStageStats(previous.stage, updated.stage);
       updateJob(updated)
         .then((saved) => {
           setNotice(null);
@@ -175,7 +244,7 @@ export function ApiJobTracker() {
           resync();
         });
     },
-    [resync]
+    [resync, moveStageStats]
   );
 
   if (status === "loading") {
@@ -210,12 +279,15 @@ export function ApiJobTracker() {
       ) : null}
       <JobBoard
         jobs={jobs}
+        stats={stats}
         onCreateJob={handleCreateJob}
         onStageChange={handleStageChange}
         onEditJob={handleEditJob}
         hasMore={nextPage !== null}
         onLoadMore={handleLoadMore}
         totalCount={totalRecords}
+        remoteFilter={stageFilter}
+        onRemoteFilterChange={handleFilterChange}
       />
     </>
   );

@@ -1,4 +1,4 @@
-import { todayISO, type Job, type Stage } from "@/app/lib/jobs";
+import { todayISO, type Job, type Stage, type StageFilter } from "@/app/lib/jobs";
 import { apiFetch, markSessionExpired } from "@/app/lib/auth";
 
 /** API stage values (lowercase) ↔ frontend Title-Case stages. */
@@ -141,14 +141,39 @@ export function toUpdatePayload(job: Job): Record<string, string | number> {
   return payload;
 }
 
-/** Fetches one page of the job list from the API, mapped to frontend Jobs. */
+/**
+ * Fetches one page of the job list from the API, mapped to frontend Jobs.
+ * With a `stageFilter` (anything but "all"), only applications in that stage
+ * are returned — pagination then runs over the filtered set server-side.
+ */
 export async function fetchJobsPage(
-  page: number
+  page: number,
+  stageFilter?: StageFilter
 ): Promise<{ jobs: Job[]; meta: PaginateMeta }> {
-  const body = await request<ListResponse>(
-    `/job_apps?paginate[limit]=${PAGE_SIZE}&paginate[page]=${page}`
-  );
+  const params = new URLSearchParams({
+    "paginate[limit]": String(PAGE_SIZE),
+    "paginate[page]": String(page),
+  });
+  if (stageFilter !== undefined && stageFilter !== "all") {
+    params.set("filter[current_stage]", STAGE_TO_API[stageFilter]);
+  }
+  const body = await request<ListResponse>(`/job_apps?${params.toString()}`);
   return { jobs: body.data.map(toJob), meta: body.meta.paginate };
+}
+
+/** Aggregated stage counts across all applications (GET /job_apps/stats). */
+export interface JobStats {
+  total: number;
+  applied: number;
+  interviewing: number;
+  offer: number;
+  ghosted: number;
+  rejected: number;
+}
+
+/** Fetches server-side application stats (covers all pages, not just loaded ones). */
+export function fetchStats(): Promise<JobStats> {
+  return request<{ data: JobStats }>("/job_apps/stats").then((body) => body.data);
 }
 
 /** Creates a job via the API and returns the server-persisted version. */
