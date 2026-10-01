@@ -48,6 +48,17 @@ interface ListResponse {
 /** Page size for server-side list pagination. */
 const PAGE_SIZE = 10;
 
+/** An API error carrying the HTTP status so callers can branch on it. */
+export class ApiError extends Error {
+  readonly status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
 /**
  * Shared request wrapper. A 401 means the session is gone (expired token or
  * revoked server-side) — flag it so every consumer drops to the sign-in prompt
@@ -62,22 +73,29 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
   if (res.status === 401) {
     markSessionExpired();
-    throw new Error("Your session has expired. Please sign in again.");
+    throw new ApiError(401, "Your session has expired. Please sign in again.");
   }
   if (!res.ok) {
     let message = `Request failed (${res.status}).`;
-    if (res.status === 422) {
+    // 422 (validation) and 409 (conflict) both arrive as
+    // { errors: [{ field, message }] }, with message possibly an array.
+    if (res.status === 409 || res.status === 422) {
       try {
         const body = (await res.json()) as {
-          errors?: { field: string; message: string }[];
+          errors?: { field: string; message: string | string[] }[];
         };
         const first = body.errors?.[0];
-        if (first) message = `${first.field}: ${first.message}`;
+        if (first) {
+          const detail = Array.isArray(first.message)
+            ? first.message.join(", ")
+            : first.message;
+          message = `${first.field}: ${detail}`;
+        }
       } catch {
         // Non-JSON error body — keep the generic message.
       }
     }
-    throw new Error(message);
+    throw new ApiError(res.status, message);
   }
   return (await res.json()) as T;
 }
@@ -209,4 +227,54 @@ export interface User {
 export async function fetchUser(): Promise<User> {
   const body = await request<{ data: User }>("/user");
   return body.data;
+}
+
+/** The backend's token block on auth responses (`meta.token`). */
+export interface AuthToken {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+}
+
+interface AuthMeta {
+  token: AuthToken;
+}
+
+/** Creates an account via POST /user and returns the user plus issued token. */
+export async function createUser(input: {
+  name: string;
+  email: string;
+  password: string;
+}): Promise<{ user: User; token: AuthToken }> {
+  const body = await request<{ data: User; meta: AuthMeta }>("/user", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  return { user: body.data, token: body.meta.token };
+}
+
+/**
+ * Signs in via POST /sign_in and returns the issued token. Uses apiFetch
+ * directly (not request()) so a 401 from wrong credentials doesn't trip the
+ * global "session expired" flag — there is no session to expire yet.
+ */
+export async function signIn(email: string, password: string): Promise<AuthToken> {
+  let res: Response;
+  try {
+    res = await apiFetch("/sign_in", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+  } catch {
+    throw new Error("Couldn't reach the server. Check your connection and try again.");
+  }
+  if (!res.ok) {
+    // The backend answers 401 for both unknown emails and wrong passwords,
+    // so a single message keeps accounts from being probed.
+    throw new Error("Invalid email or password.");
+  }
+  const body = (await res.json()) as { meta: AuthMeta };
+  return body.meta.token;
 }

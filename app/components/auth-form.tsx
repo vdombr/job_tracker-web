@@ -4,7 +4,8 @@ import { useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Lock, Mail, User } from "lucide-react";
-import { apiFetch, setToken } from "@/app/lib/auth";
+import { setToken } from "@/app/lib/auth";
+import { ApiError, createUser, signIn } from "@/app/lib/api-jobs";
 
 type AuthMode = "signin" | "signup";
 
@@ -73,36 +74,32 @@ export function AuthForm() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (isSignup) {
-      if (password.length < 8) {
-        setStatus("Password must be at least 8 characters.");
-        return;
-      }
-      setStatus(
-        "Demo mode — account creation isn't connected to a backend yet.",
-      );
+    // Cheap local check before any network work.
+    if (isSignup && password.length < 8) {
+      setStatus("Password must be at least 8 characters.");
       return;
     }
 
     setSubmitting(true);
     try {
-      const res = await apiFetch("/sign_in", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      if (res.ok) {
-        setToken(await res.text());
-        router.push("/");
-        return;
+      // Create already returns a token, so sign-up is a single request.
+      const token = isSignup
+        ? (await createUser({ name, email, password })).token
+        : await signIn(email, password);
+      setToken(token.access_token);
+      router.push("/");
+    } catch (error) {
+      // A 409 from create means the email is already taken; the raw conflict
+      // message is database jargon, so map it to something readable.
+      if (isSignup && error instanceof ApiError && error.status === 409) {
+        setStatus("This email already exists.");
+      } else {
+        setStatus(
+          error instanceof Error
+            ? error.message
+            : "Something went wrong. Try again.",
+        );
       }
-      // The backend answers 404 for both unknown emails and wrong passwords,
-      // so a single message keeps accounts from being probed.
-      setStatus("Invalid email or password.");
-    } catch {
-      setStatus(
-        "Couldn't reach the server. Check your connection and try again.",
-      );
     } finally {
       setSubmitting(false);
     }
@@ -168,7 +165,9 @@ export function AuthForm() {
             className="w-full cursor-pointer rounded-[10px] bg-accent py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-px hover:brightness-110 hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting
-              ? "Signing in…"
+              ? isSignup
+                ? "Creating account…"
+                : "Signing in…"
               : isSignup
                 ? "Create account"
                 : "Sign in"}
