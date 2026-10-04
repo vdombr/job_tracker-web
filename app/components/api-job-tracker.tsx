@@ -13,6 +13,9 @@ import { JobBoard } from "./job-board";
 
 type Status = "loading" | "error" | "ready";
 
+/** Idle time (ms) before a burst of search keystrokes is sent to the server. */
+const SEARCH_DEBOUNCE_MS = 300;
+
 /**
  * Authenticated mode: job list loaded from the backend API with server-side
  * pagination (one page at a time, appended via "Load more"). Mutations are
@@ -28,6 +31,11 @@ export function ApiJobTracker() {
   // Stage filter — sent to the server on every list fetch; pagination then
   // runs over the filtered set.
   const [stageFilter, setStageFilter] = useState<StageFilter>("all");
+  // Search: the raw input (instant, cheap re-render per keystroke) and the
+  // debounced term actually sent to the server — typing must not fire a
+  // request per key.
+  const [searchInput, setSearchInput] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   // Server pagination: next page to fetch (null = last page) and the server's
   // total record count for the "X of Y shown" label.
   const [nextPage, setNextPage] = useState<number | null>(null);
@@ -51,6 +59,11 @@ export function ApiJobTracker() {
   useEffect(() => {
     stageFilterRef.current = stageFilter;
   }, [stageFilter]);
+  // Current debounced term for the stable "Load more" callback.
+  const searchTermRef = useRef("");
+  useEffect(() => {
+    searchTermRef.current = searchTerm;
+  }, [searchTerm]);
 
   // Guards re-fetches from blanking the list while a full reload is in flight.
   const hasLoadedRef = useRef(false);
@@ -58,6 +71,19 @@ export function ApiJobTracker() {
   const loadingMoreRef = useRef(false);
   // Bumped on every (re)load so in-flight page loads can detect they're stale.
   const generationRef = useRef(0);
+
+  // Debounce the raw input into the server term (~300ms idle). Resetting
+  // `nextPage` hides "Load more" during the fetch (like handleFilterChange);
+  // a no-op timer never triggers a refetch because setState bails out on an
+  // unchanged value.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const next = searchInput.trim();
+      if (next !== searchTermRef.current) setNextPage(null);
+      setSearchTerm(next);
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,7 +93,7 @@ export function ApiJobTracker() {
     loadingMoreRef.current = false;
     // The previous page's jobs stay visible until this one lands
     // (hasLoadedRef skips the skeleton).
-    fetchJobsPage(1, stageFilter)
+    fetchJobsPage(1, stageFilter, searchTerm || undefined)
       .then(({ jobs: loaded, meta }) => {
         if (cancelled || generation !== generationRef.current) return;
         hasLoadedRef.current = true;
@@ -91,7 +117,7 @@ export function ApiJobTracker() {
     return () => {
       cancelled = true;
     };
-  }, [reloadKey, stageFilter]);
+  }, [reloadKey, stageFilter, searchTerm]);
 
   // Stats are global (the endpoint takes no filter), so this only tracks
   // reloads — switching the stage filter must not re-fetch them.
@@ -125,6 +151,10 @@ export function ApiJobTracker() {
     setNextPage(null);
   }, []);
 
+  // Raw input updates are cheap; the debounce effect above coalesces them
+  // into at most one server fetch per ~300ms idle window.
+  const handleSearchChange = useCallback((q: string) => setSearchInput(q), []);
+
   /**
    * Optimistically moves one application between stage counts. Stage names are
    * the Title-Case mirror of the API's lowercase keys (see api-jobs.ts).
@@ -150,7 +180,7 @@ export function ApiJobTracker() {
     if (page === null || loadingMoreRef.current) return;
     const generation = generationRef.current;
     loadingMoreRef.current = true;
-    fetchJobsPage(page, stageFilterRef.current)
+    fetchJobsPage(page, stageFilterRef.current, searchTermRef.current || undefined)
       .then(({ jobs: loaded, meta }) => {
         if (generation !== generationRef.current) return; // a resync superseded it
         loadingMoreRef.current = false;
@@ -288,6 +318,8 @@ export function ApiJobTracker() {
         totalCount={totalRecords}
         remoteFilter={stageFilter}
         onRemoteFilterChange={handleFilterChange}
+        remoteQuery={searchInput}
+        onRemoteQueryChange={handleSearchChange}
       />
     </>
   );

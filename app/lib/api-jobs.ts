@@ -161,12 +161,14 @@ export function toUpdatePayload(job: Job): Record<string, string | number> {
 
 /**
  * Fetches one page of the job list from the API, mapped to frontend Jobs.
- * With a `stageFilter` (anything but "all"), only applications in that stage
- * are returned — pagination then runs over the filtered set server-side.
+ * With a `stageFilter` (anything but "all") and/or a non-empty `search`,
+ * results are filtered server-side — the two compose, and pagination runs
+ * over the filtered set.
  */
 export async function fetchJobsPage(
   page: number,
-  stageFilter?: StageFilter
+  stageFilter?: StageFilter,
+  search?: string
 ): Promise<{ jobs: Job[]; meta: PaginateMeta }> {
   const params = new URLSearchParams({
     "paginate[limit]": String(PAGE_SIZE),
@@ -174,6 +176,9 @@ export async function fetchJobsPage(
   });
   if (stageFilter !== undefined && stageFilter !== "all") {
     params.set("filter[current_stage]", STAGE_TO_API[stageFilter]);
+  }
+  if (search) {
+    params.set("search", search);
   }
   const body = await request<ListResponse>(`/job_apps?${params.toString()}`);
   return { jobs: body.data.map(toJob), meta: body.meta.paginate };

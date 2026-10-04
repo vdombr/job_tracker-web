@@ -29,6 +29,12 @@ interface JobBoardProps {
    * its internal state). */
   remoteFilter?: StageFilter;
   onRemoteFilterChange?: (filter: StageFilter) => void;
+  /** API mode: externally controlled search term. When both this and
+   * `onRemoteQueryChange` are provided, the input is driven by them and
+   * changes are reported up instead of stored internally (local mode keeps
+   * its internal state). */
+  remoteQuery?: string;
+  onRemoteQueryChange?: (query: string) => void;
 }
 
 /**
@@ -49,17 +55,22 @@ export function JobBoard({
   stats,
   remoteFilter,
   onRemoteFilterChange,
+  remoteQuery,
+  onRemoteQueryChange,
 }: JobBoardProps) {
-  const [query, setQuery] = useState("");
+  const [internalQuery, setInternalQuery] = useState("");
   const [internalFilter, setInternalFilter] = useState<StageFilter>("all");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   // Controlled (API mode) or internal (local mode) — derived during render,
   // no sync effect (rerender-derived-state-no-effect).
   const filter = onRemoteFilterChange ? remoteFilter ?? "all" : internalFilter;
+  const query = onRemoteQueryChange ? remoteQuery ?? "" : internalQuery;
 
-  // Derived during render — no effect needed to keep the list in sync.
-  const search = query.trim().toLowerCase();
+  // Derived during render — no effect needed to keep the list in sync. In API
+  // mode the server owns search, so the client filter runs with an empty term
+  // (local mode still filters loaded jobs by title/company).
+  const search = onRemoteQueryChange ? "" : query.trim().toLowerCase();
   const filteredJobs = jobs.filter(
     (job) =>
       (filter === "all" || job.stage === filter) &&
@@ -72,16 +83,22 @@ export function JobBoard({
   // pass its pagination state straight through. Local mode keeps today's
   // visibleCount slicing (LocalJobTracker is untouched).
   const serverPaginated = onLoadMore !== undefined && totalCount !== undefined;
-  const isFiltered = search !== "" || filter !== "all";
 
   // Derived during render — no effect (rerender-derived-state-no-effect).
   const visibleJobs = serverPaginated ? filteredJobs : filteredJobs.slice(0, visibleCount);
 
   // Reset pagination in the event handlers (rerender-move-effect-to-event).
-  const handleQueryChange = useCallback((q: string) => {
-    setQuery(q);
-    setVisibleCount(PAGE_SIZE);
-  }, []);
+  const handleQueryChange = useCallback(
+    (q: string) => {
+      if (onRemoteQueryChange) {
+        onRemoteQueryChange(q);
+      } else {
+        setInternalQuery(q);
+        setVisibleCount(PAGE_SIZE);
+      }
+    },
+    [onRemoteQueryChange]
+  );
 
   const handleFilterChange = useCallback(
     (f: StageFilter) => {
@@ -112,11 +129,9 @@ export function JobBoard({
       />
       <JobList
         jobs={visibleJobs}
-        // With a search/filter active only loaded pages are searchable, so the
-        // best known total is the filtered length; otherwise the server's.
-        totalCount={
-          serverPaginated ? (isFiltered ? filteredJobs.length : totalCount) : filteredJobs.length
-        }
+        // In server-paginated mode the server's total is exact for the active
+        // filter+search combination; local mode counts what it has loaded.
+        totalCount={serverPaginated ? totalCount : filteredJobs.length}
         hasMore={serverPaginated ? hasMore === true : visibleCount < filteredJobs.length}
         onLoadMore={serverPaginated ? onLoadMore : handleLoadMore}
         onCreateJob={onCreateJob}
